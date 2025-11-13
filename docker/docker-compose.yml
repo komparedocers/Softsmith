@@ -1,0 +1,117 @@
+version: "3.9"
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: smaker
+      POSTGRES_PASSWORD: smaker
+      POSTGRES_DB: smaker
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U smaker"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis - Message broker and cache
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # FastAPI Backend API
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.api
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://smaker:smaker@db:5432/smaker
+      - REDIS_URL=redis://redis:6379/0
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - GITLAB_TOKEN=${GITLAB_TOKEN}
+    env_file:
+      - ../.env
+    volumes:
+      - ../configs:/app/configs
+      - ../projects:/app/projects
+      - ../logs:/app/logs
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Celery Workers
+  worker:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.api
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://smaker:smaker@db:5432/smaker
+      - REDIS_URL=redis://redis:6379/0
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - GITLAB_TOKEN=${GITLAB_TOKEN}
+    env_file:
+      - ../.env
+    volumes:
+      - ../configs:/app/configs
+      - ../projects:/app/projects
+      - ../logs:/app/logs
+      - /var/run/docker.sock:/var/run/docker.sock  # For Docker-in-Docker
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      api:
+        condition: service_started
+    command: celery -A app.worker.celery_app worker --loglevel=info --concurrency=4
+
+  # Web Agent (Playwright)
+  web-agent:
+    build:
+      context: ../web-agent
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    volumes:
+      - ../projects:/app/projects
+      - web_screenshots:/app/screenshots
+    environment:
+      - PYTHONUNBUFFERED=1
+
+  # React Frontend
+  web:
+    build:
+      context: ../frontend
+      dockerfile: ../docker/Dockerfile.web
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+
+volumes:
+  db_data:
+  redis_data:
+  web_screenshots:

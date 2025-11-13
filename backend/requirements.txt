@@ -1,0 +1,44 @@
+# Core Framework
+fastapi==0.108.0
+uvicorn[standard]==0.25.0
+pydantic==2.5.3
+pydantic-settings==2.1.0
+
+# Database
+sqlalchemy==2.0.25
+alembic==1.13.1
+psycopg[binary]==3.1.16
+asyncpg==0.29.0
+
+# Task Queue
+celery==5.3.4
+redis==5.0.1
+
+# LLM & AI
+langchain==0.1.0
+langchain-openai==0.0.2
+langchain-anthropic==0.0.1
+openai==1.7.2
+anthropic==0.8.1
+
+# Web Automation
+playwright==1.41.0
+selenium==4.16.0
+
+# Utilities
+python-multipart==0.0.6
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-dotenv==1.0.0
+pyyaml==6.0.1
+httpx==0.26.0
+aiofiles==23.2.1
+gitpython==3.1.40
+
+# Testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+
+# Logging
+structlog==24.1.0

@@ -1,0 +1,62 @@
+app:
+  base_url: "http://localhost:8000"
+  projects_dir: "/app/projects"
+  max_retries: 5
+  max_concurrent_projects: 10
+  max_fix_attempts: 5
+  worker_concurrency: 4
+
+llm:
+  mode: "hybrid"   # "openai", "claude", "local", "hybrid"
+  fallback_enabled: true
+  max_retries: 3
+  providers:
+    openai:
+      enabled: true
+      api_key_env: "OPENAI_API_KEY"
+      model: "gpt-4-turbo-preview"
+      max_tokens: 4096
+      temperature: 0.7
+    claude:
+      enabled: false
+      api_key_env: "ANTHROPIC_API_KEY"
+      model: "claude-3-sonnet-20240229"
+      max_tokens: 4096
+      temperature: 0.7
+    local:
+      enabled: false
+      base_url: "http://localhost:8000/v1"
+      model: "deepseek-coder"
+      max_tokens: 4096
+      temperature: 0.7
+  routing:
+    planning: ["openai"]
+    code_generation: ["openai", "local"]
+    debugging: ["openai"]
+    testing: ["openai"]
+    documentation: ["openai"]
+    review: ["claude", "openai"]
+
+database:
+  url: "postgresql+asyncpg://smaker:smaker@db:5432/smaker"
+  pool_size: 20
+  max_overflow: 10
+  echo: false
+
+redis:
+  url: "redis://redis:6379/0"
+  max_connections: 50
+
+git:
+  github_enabled: true
+  gitlab_enabled: true
+  github_token_env: "GITHUB_TOKEN"
+  gitlab_token_env: "GITLAB_TOKEN"
+  auto_commit: true
+  auto_push: false
+
+logging:
+  level: "INFO"
+  format: "json"
+  log_to_file: true
+  log_dir: "/app/logs"

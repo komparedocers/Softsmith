@@ -8,7 +8,7 @@ from app.core.config import get_config
 from app.core.db import init_db, create_tables
 from app.core.logging import setup_logging, get_logger
 from app.core.task_queue import init_celery
-from app.api.routers import projects, tasks, config, agents
+from app.api.routers import projects, tasks, config, agents, system
 
 
 @asynccontextmanager
@@ -54,6 +54,7 @@ app.include_router(projects.router)
 app.include_router(tasks.router)
 app.include_router(config.router)
 app.include_router(agents.router)
+app.include_router(system.router)
 
 
 @app.get("/")
